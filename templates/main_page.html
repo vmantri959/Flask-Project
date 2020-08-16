@@ -20,6 +20,19 @@
 					Ask Price
 				</th>
 			</tr>
+			{% for stock_name in name_of_stocks %}
+			<tr>
+				<th>
+					{{ stock_name }}
+				</th>
+				<th>
+					{{ bid_prices.pop(0) }}
+				</th>
+				<th>
+					{{ ask_prices.pop(0) }}
+				</th>
+			</tr>
+			{% endfor %}
 		</table>
 
 		<br>
