@@ -1,0 +1,12 @@
+<html>
+	<form action = "delete_stock_show_main_page" method = "post">
+		<label> Select the stock to delete </label>
+		<select name = "deleted_stock">
+			{% for stock_name in name_of_stocks %}
+			<option value = "{{stock_name }}"> {{ stock_name }} </option>
+			{% endfor %}
+		</select>
+		<br>
+		<button type = "submit"> Delete Stock </button>
+	</form>
+</html>

@@ -1,43 +1,51 @@
 <html>
-	<style>
-		table, th {
-			border: 1px solid black
-		}
-	</style>
+	<head>
+		<meta http-equiv="refresh" content="60">
+	</head>
+	<body>
+		<style>
+table, th {
+	border: 1px solid black
+}
+		</style>
 
-	<div style = "font-family: Helvetica"> Stock Watchlist </div>
-	<br>
-	<form action = "/add_stock">
-		<table>
-			<tr>
-				<th>
-					Asset
-				</th>
-				<th>
-					Bid Price
-				</th>
-				<th>
-					Ask Price
-				</th>
-			</tr>
-			{% for stock_name in name_of_stocks %}
-			<tr>
-				<th>
-					{{ stock_name }}
-				</th>
-				<th>
-					{{ bid_prices.pop(0) }}
-				</th>
-				<th>
-					{{ ask_prices.pop(0) }}
-				</th>
-			</tr>
-			{% endfor %}
-		</table>
+		<div style = "font-family: Helvetica"> Stock Watchlist 
+			<br>
+			<form action = "/add_stock">
+				<table>
+					<tr>
+						<th>
+							Asset
+						</th>
+						<th>
+							Bid Price
+						</th>
+						<th>
+							Ask Price
+						</th>
+					</tr>
+					{% for stock_name in name_of_stocks %}
+					<tr>
+						<th>
+							{{ stock_name }}
+						</th>
+						<th>
+							{{ bid_prices.pop(0) }}
+						</th>
+						<th>
+							{{ ask_prices.pop(0) }}
+						</th>
+					</tr>
+					{% endfor %}
+				</table>
+				<br>
+				<button type = "submit"> Click to Add a Stock </button>
+			</form>
+			<form action = "/remove_stock">
+				<button type = "submit"> Click to Remove a Stock </button>
+			</form>
+		</div>
 
-		<br>
-		<button type = "submit"> Click to Add a Stock </button>
-	</form>
-
+	</body>
 </html>
 
