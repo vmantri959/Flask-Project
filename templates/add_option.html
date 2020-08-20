@@ -1,0 +1,40 @@
+<html>
+	<form action = "/add_option_show_main_page", method = "post">
+		<table>
+			<tr>
+				<td>
+					Enter Stock/ETF Ticker for the Option
+				</td>
+				<td>
+					<input type = "text" name = "underlying">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Enter Strike Price
+				</td>
+				<td>
+					<input type = "text" name = "strike_price">
+				</td>
+			</tr>
+			<tr>
+				<td>
+					Type of Option
+				</td>
+				<td>
+					<select name = "type_of_option">
+						<option value = "Call"> Call </option>
+						<option value = "Put"> Put </option>
+					</select>
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+				</td>
+				<td>
+					<input type = "submit" value = "Add Option" >
+				</td>
+			</tr>
+	</form>
+</html>

@@ -62,10 +62,6 @@
 						<th>
 							Profit
 						</th>
-						<th>
-							Status 
-						</th>
-
 					</tr>
 					{% for stock_name in name_of_stocks %}
 					<tr>
@@ -89,9 +85,6 @@
 						</td>
 						<td>
 							{{ profit_or_losses.pop(0) }}
-						</td>
-						<td>
-							{{ statuses.pop(0) }}
 						</td>
 					</tr>
 					{% endfor %}
