@@ -4,48 +4,111 @@
 	</head>
 	<body>
 		<style>
-table, th {
-	border: 1px solid black
-}
+			table, th, td {
+				border: 1px solid #ddd; 
+				text-align: left;
+			}
+			th, td{
+				padding: 15px;
+			}
+			.button1 {
+				border: 1px solid #18b812;
+				background-color: white;
+				padding: 10px;
+				text-align: center;
+			}
+			.button1:hover {
+				border: 1px solid #18b812;
+				background-color: #18b812;
+				padding: 10px;
+				text-align: center;
+			}
+			.button2 {
+				border: 1px solid #d10d13;
+				background-color: white;
+				padding: 10px;
+				text-align: center;
+			}
+			.button2:hover {
+				border: 1px solid #d10d13;
+				background-color: #d10d13;
+				padding: 10px;
+				text-align: center;
+			}
 		</style>
 
-		<div style = "font-family: Helvetica"> Stock Watchlist 
-			<br>
+		<div style = "font-family: Helvetica">  
 			<form action = "/add_stock">
 				<table>
 					<tr>
 						<th>
-							Asset
+							Symbol
 						</th>
 						<th>
-							Bid Price
+							Asset 
 						</th>
 						<th>
-							Ask Price
+							Price
 						</th>
+						<th>
+							Quantity 
+						</th>
+						<th>
+							Mkt. Value 
+						</th>
+						<th>
+							Cost 
+						</th>
+						<th>
+							Profit
+						</th>
+						<th>
+							Status 
+						</th>
+
 					</tr>
 					{% for stock_name in name_of_stocks %}
 					<tr>
-						<th>
+						<td>
 							{{ stock_name }}
-						</th>
-						<th>
-							{{ bid_prices.pop(0) }}
-						</th>
-						<th>
-							{{ ask_prices.pop(0) }}
-						</th>
+						</td>
+						<td>
+							{{ assets.pop(0) }}
+						</td>
+						<td>
+							{{ prices.pop(0) }}
+						</td>
+						<td>
+							{{ quantities.pop(0) }}
+						</td>
+						<td>
+							{{ current_market_values.pop(0) }}
+						</td>
+						<td>
+							{{ costs.pop(0) }}
+						</td>
+						<td>
+							{{ profit_or_losses.pop(0) }}
+						</td>
+						<td>
+							{{ statuses.pop(0) }}
+						</td>
 					</tr>
 					{% endfor %}
 				</table>
 				<br>
-				<button type = "submit"> Click to Add a Stock </button>
+				<button class = "button1" type = "submit"> Click to Add a Stock </button>
 			</form>
+
+			<form action = "/add_option">
+				<button class = "button1" type = "submit"> Click to Add an Option </button>
+			</form>
+
 			<form action = "/remove_stock">
-				<button type = "submit"> Click to Remove a Stock </button>
+				<button class = "button2" type = "submit"> Click to Remove a Stock </button>
 			</form>
+
 		</div>
 
 	</body>
 </html>
-
