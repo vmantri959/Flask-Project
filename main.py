@@ -72,8 +72,7 @@ def add_updated_option_list():
         statuses.append(option.status)
         type_of_options.append(option.type_of_option)
 
-@app.route('/')
-def main_page():
+def update_stocks_and_options():
     stocks = Stock.query.all()
     for stock in stocks:
         stock_info = requests.get('https://api.tdameritrade.com/v1/marketdata/' + stock.name + '/quotes?apikey=BECNZHSKXG7K2GNI4FKBG13KBXXQBGJR')
@@ -87,6 +86,36 @@ def main_page():
             db.session.rollback()
             print(e)
             print('Failed to update stock')
+    options = Option.query.all()
+    for option in options:
+        stock_info = requests.get('https://api.tdameritrade.com/v1/marketdata/' + option.name + '/quotes?apikey=BECNZHSKXG7K2GNI4FKBG13KBXXQBGJR')
+        stock_info = json.loads(stock_info.text)
+        bid_price = stock_info[option.name]['bidPrice']
+        ask_price = stock_info[option.name]['askPrice']
+        try:
+            current_price = (int(((bid_price + ask_price) / 2) * 100)) / 100 
+            if current_price > option.strike_price:
+                if option.type_of_option == 'Call':
+                   option.status = 'In the money'
+                else:
+                    option.status = 'Out of the money'
+            elif current_price == strike_price:
+                option.status = 'At the money'
+            else:
+                if option.type_of_option == 'Call':
+                    option.status = 'Out of the money'
+                else:
+                    option.status = 'In the money'
+            option.current_price = current_price
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print(e)
+            print('Failed to update option')
+
+@app.route('/')
+def main_page():
+    update_stocks_and_options()
     add_updated_stock_list()
     add_updated_option_list()
     return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses, name_of_options = name_of_options, strike_prices = strike_prices, current_prices_underlying = current_prices_underlying, type_of_options = type_of_options, statuses = statuses)
@@ -133,6 +162,7 @@ def add_stock_show_main_page():
                 print('Failed due to exception')
         else:
             print('Stock could not be added')
+    update_stocks_and_options()
     add_updated_stock_list()
     add_updated_option_list()
     return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses, name_of_options = name_of_options, strike_prices = strike_prices, current_prices_underlying = current_prices_underlying, type_of_options = type_of_options, statuses = statuses)
@@ -171,7 +201,7 @@ def add_option_show_main_page():
                 db.session.rollback()
         else:
             print('Option could not be added')
-
+    update_stocks_and_options()
     add_updated_stock_list()
     add_updated_option_list()
     return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses, name_of_options = name_of_options, strike_prices = strike_prices, current_prices_underlying = current_prices_underlying, type_of_options = type_of_options, statuses = statuses)
@@ -189,6 +219,7 @@ def delete_stock_show_main_page():
             db.session.rollback()
             print(e)
             print('Failed to delete stock')
+    update_stocks_and_options()
     add_updated_stock_list()
     add_updated_option_list()
     return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses, name_of_options = name_of_options, strike_prices = strike_prices, current_prices_underlying = current_prices_underlying, type_of_options = type_of_options, statuses = statuses)
@@ -205,6 +236,7 @@ def delete_option_show_main_page():
             db.session.rollback()
             print(e)
             print('Failed to delete option')
+    update_stocks_and_options()
     add_updated_stock_list()
     add_updated_option_list()
     return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses, name_of_options = name_of_options, strike_prices = strike_prices, current_prices_underlying = current_prices_underlying, type_of_options = type_of_options, statuses = statuses)
