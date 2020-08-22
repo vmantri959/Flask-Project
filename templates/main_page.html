@@ -92,14 +92,36 @@
 				<br>
 				<button class = "button1" type = "submit"> Click to Add a Stock </button>
 			</form>
-
-			<form action = "/add_option">
-				<button class = "button1" type = "submit"> Click to Add an Option </button>
-			</form>
-
 			<form action = "/remove_stock">
 				<button class = "button2" type = "submit"> Click to Remove a Stock </button>
 			</form>
+			<br>
+			<table>
+				<tr>
+					<th> Underlying </th>
+					<th> Option Type </th>
+					<th> Price </th>
+					<th> Strike Price </th>
+					<th> Status </th>
+				</tr>
+				{% for option in name_of_options %}
+				<tr>
+					<td> {{ option }} </td>
+					<td> {{ type_of_options.pop(0) }} </td>
+					<td> {{ current_prices_underlying.pop(0) }} </td>
+					<td> {{ strike_prices.pop(0) }} </td>
+					<td> {{ statuses.pop(0) }} </td>
+				</tr>
+				{% endfor %}
+			</table>
+			<br>
+			<form action = "/add_option">
+				<button class = "button1" type = "submit"> Click to Add an Option </button>
+			</form>
+			<form action = "/remove_option">
+				<button class = "button2" type = "submit"> Click to Remove an Option </button>
+			</form>
+
 
 		</div>
 

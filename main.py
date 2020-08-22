@@ -17,6 +17,11 @@ quantities = []
 costs = []
 current_market_values = []
 profit_or_losses =[]
+
+name_of_options = []
+strike_prices = []
+current_prices_underlying = []
+type_of_options = []
 statuses = []
 
 class Stock(db.Model):
@@ -53,6 +58,20 @@ def add_updated_stock_list():
         current_market_values.append(stock.current_market_value)
         profit_or_losses.append(stock.profit_or_loss)
 
+def add_updated_option_list():
+    options = Option.query.all()
+    name_of_options.clear()
+    strike_prices.clear()
+    current_prices_underlying.clear()
+    statuses.clear()
+    type_of_options.clear()
+    for option in options:
+        name_of_options.append(option.name)
+        strike_prices.append(option.strike_price)
+        current_prices_underlying.append(option.current_price)
+        statuses.append(option.status)
+        type_of_options.append(option.type_of_option)
+
 @app.route('/')
 def main_page():
     stocks = Stock.query.all()
@@ -69,7 +88,8 @@ def main_page():
             print(e)
             print('Failed to update stock')
     add_updated_stock_list()
-    return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses)
+    add_updated_option_list()
+    return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses, name_of_options = name_of_options, strike_prices = strike_prices, current_prices_underlying = current_prices_underlying, type_of_options = type_of_options, statuses = statuses)
 
 @app.route('/add_stock')
 def add_stock_page():
@@ -83,6 +103,11 @@ def add_option_page():
 def remove_stock_page():
     add_updated_stock_list()
     return render_template('remove_stock.html', name_of_stocks = name_of_stocks)
+
+@app.route('/remove_option')
+def remove_option_page():
+    add_updated_option_list()
+    return render_template('remove_option.html', name_of_options = name_of_options)
 
 @app.route('/add_stock_show_main_page', methods=['POST', 'GET'])
 def add_stock_show_main_page():
@@ -109,14 +134,48 @@ def add_stock_show_main_page():
         else:
             print('Stock could not be added')
     add_updated_stock_list()
-    return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses)
+    add_updated_option_list()
+    return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses, name_of_options = name_of_options, strike_prices = strike_prices, current_prices_underlying = current_prices_underlying, type_of_options = type_of_options, statuses = statuses)
 
 @app.route('/add_option_show_main_page', methods=['POST', 'GET'])
 def add_option_show_main_page():
     if request.method == 'POST':
         underlying = request.form['underlying']
-        strike_price = request.form['strike_price']
+        strike_price = float(request.form['strike_price'])
         type_of_option = request.form['type_of_option']
+        #Send API request
+        stock_info = requests.get('https://api.tdameritrade.com/v1/marketdata/' + underlying + '/quotes?apikey=BECNZHSKXG7K2GNI4FKBG13KBXXQBGJR')
+        if stock_info.text != '{}':
+            stock_info = json.loads(stock_info.text)
+            bid_price = stock_info[underlying]['bidPrice']
+            ask_price = stock_info[underlying]['askPrice']
+            price = round((bid_price + ask_price) / 2, 2)
+            if price > strike_price:
+                if type_of_option == 'Call':
+                    status = 'In the money'
+                else:
+                    status = 'Out of the money'
+            elif price == strike_price:
+                status = 'At the money'
+            else:
+                if type_of_option == 'Call':
+                    status = 'Out of the money'
+                else:
+                    status = 'In the money'
+            try:
+                new_option = Option(status = status, name = underlying, type_of_option = type_of_option, strike_price = strike_price, current_price = price)
+                db.session.add(new_option)
+                db.session.commit()
+            except Exception as e:
+                print(e)
+                db.session.rollback()
+        else:
+            print('Option could not be added')
+
+    add_updated_stock_list()
+    add_updated_option_list()
+    return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses, name_of_options = name_of_options, strike_prices = strike_prices, current_prices_underlying = current_prices_underlying, type_of_options = type_of_options, statuses = statuses)
+
 
 @app.route('/delete_stock_show_main_page', methods=['POST', 'GET'])
 def delete_stock_show_main_page():
@@ -131,4 +190,21 @@ def delete_stock_show_main_page():
             print(e)
             print('Failed to delete stock')
     add_updated_stock_list()
-    return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses)
+    add_updated_option_list()
+    return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses, name_of_options = name_of_options, strike_prices = strike_prices, current_prices_underlying = current_prices_underlying, type_of_options = type_of_options, statuses = statuses)
+
+@app.route('/delete_option_show_main_page', methods = ['POST', 'GET'])
+def delete_option_show_main_page():
+    if request.method == 'POST':
+        deleted_option_name = request.form['deleted_option']
+        option_to_delete = Option.query.filter_by(name = deleted_option_name).first()
+        try:
+            db.session.delete(option_to_delete)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print(e)
+            print('Failed to delete option')
+    add_updated_stock_list()
+    add_updated_option_list()
+    return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses, name_of_options = name_of_options, strike_prices = strike_prices, current_prices_underlying = current_prices_underlying, type_of_options = type_of_options, statuses = statuses)

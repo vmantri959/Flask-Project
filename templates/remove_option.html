@@ -1,0 +1,12 @@
+<html>
+	<form action = "delete_option_show_main_page" method = "post">
+		<label> Select the option(underlying) to delete </label>
+		<select name = "deleted_option">
+			{% for option_name in name_of_options %}
+			<option value = "{{ option_name }}"> {{ option_name }} </option>
+			{% endfor %}
+		</select>
+		<br>
+		<button type = "submit"> Delete Option </button>
+	</form>
+</html>
