@@ -102,6 +102,7 @@
 					<th> Option Type </th>
 					<th> Price </th>
 					<th> Strike Price </th>
+					<th> Days to Expiration </th>
 					<th> Status </th>
 				</tr>
 				{% for option in name_of_options %}
@@ -110,6 +111,7 @@
 					<td> {{ type_of_options.pop(0) }} </td>
 					<td> {{ current_prices_underlying.pop(0) }} </td>
 					<td> {{ strike_prices.pop(0) }} </td>
+					<td> {{ days_to_expiration.pop(0) }} </td>
 					<td> {{ statuses.pop(0) }} </td>
 				</tr>
 				{% endfor %}

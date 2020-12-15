@@ -1,28 +1,29 @@
 <html>
-	<form action = "/add_stock_show_main_page", method = "post">
+	<form action = "/add_stock_show_main_page" method = "post" name = "form">
+		{{ form.csrf_token }}
 		<table>
 			<tr>
 				<td>
-					Enter Stock/ETF Ticker
+					{{ form.ticker.label }}
 				</td>
 				<td>
-					<input type = "text" name = "stock_name">
-				</td>
-			</tr>
-			<tr>
-				<td>
-					Enter Quantity
-				</td>
-				<td>
-					<input type = "text" name = "quantity">
+					{{ form.ticker }}
 				</td>
 			</tr>
 			<tr>
 				<td>
-					Enter the price at which stock/ETF was bought at
+					{{ form.quantity.label }}
 				</td>
 				<td>
-					<input type = "text" name = "stock_bought_at_this_price">
+					{{ form.quantity }}
+				</td>
+			</tr>
+			<tr>
+				<td>
+					{{ form.stock_bought_at_this_price.label }}
+				</td>
+				<td>
+					{{ form.stock_bought_at_this_price }}
 				</td>
 			</tr>
 			<tr>
@@ -33,4 +34,5 @@
 				</td>
 			</tr>
 	</form>
+	</script>
 </html>

@@ -1,7 +1,9 @@
 from flask import Flask, render_template, request
 from flask_sqlalchemy import SQLAlchemy
+from wtforms import Form, StringField, IntegerField, DecimalField, validators
 import requests
 import json
+from datetime import datetime
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
@@ -23,6 +25,7 @@ strike_prices = []
 current_prices_underlying = []
 type_of_options = []
 statuses = []
+days_to_expiration = []
 
 class Stock(db.Model):
     name = db.Column(db.String, primary_key = True)
@@ -39,6 +42,12 @@ class Option(db.Model):
     current_price = db.Column(db.Float, nullable = False)
     status = db.Column(db.String, nullable = False)
     type_of_option = db.Column(db.String, nullable = False)
+    expiration_date = db.Column(db.DateTime, nullable = False) 
+
+class StockForm(Form):
+    ticker = StringField('Enter Stock/ETF Ticker', [validators.DataRequired()])
+    quantity = IntegerField('Enter Quantity', [validators.DataRequired()])
+    stock_bought_at_this_price = StringField('Enter the price at which stock/ETF was bought at', [validators.DataRequired()])
 
 def add_updated_stock_list():
     stocks = Stock.query.all()
@@ -65,12 +74,14 @@ def add_updated_option_list():
     current_prices_underlying.clear()
     statuses.clear()
     type_of_options.clear()
+    days_to_expiration.clear()
     for option in options:
         name_of_options.append(option.name)
         strike_prices.append(option.strike_price)
         current_prices_underlying.append(option.current_price)
         statuses.append(option.status)
         type_of_options.append(option.type_of_option)
+        days_to_expiration.append(str((option.expiration_date - datetime.now()).days + 1))
 
 def update_stocks_and_options():
     stocks = Stock.query.all()
@@ -81,6 +92,8 @@ def update_stocks_and_options():
         ask_price = stock_info[stock.name]['askPrice']
         try:
             stock.price = (int(((bid_price + ask_price) / 2) * 100)) / 100 
+            stock.current_market_value = round(float(stock.price) * float(stock.quantity), 2)
+            stock.profit_or_loss = round(float(stock.current_market_value) - float(stock.cost), 2)
             db.session.commit()
         except Exception as e:
             db.session.rollback()
@@ -118,11 +131,12 @@ def main_page():
     update_stocks_and_options()
     add_updated_stock_list()
     add_updated_option_list()
-    return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses, name_of_options = name_of_options, strike_prices = strike_prices, current_prices_underlying = current_prices_underlying, type_of_options = type_of_options, statuses = statuses)
+    return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses, name_of_options = name_of_options, strike_prices = strike_prices, current_prices_underlying = current_prices_underlying, type_of_options = type_of_options, statuses = statuses, days_to_expiration = days_to_expiration)
 
 @app.route('/add_stock')
 def add_stock_page():
-    return render_template('add_stock.html')
+    form = StockForm()
+    return render_template('add_stock.html', form = form)
 
 @app.route('/add_option')
 def add_option_page():
@@ -140,10 +154,11 @@ def remove_option_page():
 
 @app.route('/add_stock_show_main_page', methods=['POST', 'GET'])
 def add_stock_show_main_page():
-    if request.method == 'POST':
-        stock_name = request.form['stock_name']
-        quantity = int(request.form['quantity'])
-        stock_bought_at_this_price = float(request.form['stock_bought_at_this_price'])
+    form = StockForm(request.form)
+    if request.method == 'POST' and form.validate():
+        stock_name = form.ticker.data
+        quantity = int(form.quantity.data)
+        stock_bought_at_this_price = float(form.stock_bought_at_this_price.data)
         stock_info = requests.get('https://api.tdameritrade.com/v1/marketdata/' + stock_name + '/quotes?apikey=BECNZHSKXG7K2GNI4FKBG13KBXXQBGJR')
         if stock_info.text != '{}':
             stock_info = json.loads(stock_info.text)
@@ -165,7 +180,7 @@ def add_stock_show_main_page():
     update_stocks_and_options()
     add_updated_stock_list()
     add_updated_option_list()
-    return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses, name_of_options = name_of_options, strike_prices = strike_prices, current_prices_underlying = current_prices_underlying, type_of_options = type_of_options, statuses = statuses)
+    return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses, name_of_options = name_of_options, strike_prices = strike_prices, current_prices_underlying = current_prices_underlying, type_of_options = type_of_options, statuses = statuses, days_to_expiration = days_to_expiration)
 
 @app.route('/add_option_show_main_page', methods=['POST', 'GET'])
 def add_option_show_main_page():
@@ -173,6 +188,8 @@ def add_option_show_main_page():
         underlying = request.form['underlying']
         strike_price = float(request.form['strike_price'])
         type_of_option = request.form['type_of_option']
+        expiration_date = request.form['expiration_date'].split('-')
+        expiration_date = datetime(int(expiration_date[0]), int(expiration_date[1]), int(expiration_date[2])) 
         #Send API request
         stock_info = requests.get('https://api.tdameritrade.com/v1/marketdata/' + underlying + '/quotes?apikey=BECNZHSKXG7K2GNI4FKBG13KBXXQBGJR')
         if stock_info.text != '{}':
@@ -193,7 +210,7 @@ def add_option_show_main_page():
                 else:
                     status = 'In the money'
             try:
-                new_option = Option(status = status, name = underlying, type_of_option = type_of_option, strike_price = strike_price, current_price = price)
+                new_option = Option(status = status, name = underlying, type_of_option = type_of_option, strike_price = strike_price, current_price = price, expiration_date = expiration_date)
                 db.session.add(new_option)
                 db.session.commit()
             except Exception as e:
@@ -204,7 +221,7 @@ def add_option_show_main_page():
     update_stocks_and_options()
     add_updated_stock_list()
     add_updated_option_list()
-    return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses, name_of_options = name_of_options, strike_prices = strike_prices, current_prices_underlying = current_prices_underlying, type_of_options = type_of_options, statuses = statuses)
+    return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses, name_of_options = name_of_options, strike_prices = strike_prices, current_prices_underlying = current_prices_underlying, type_of_options = type_of_options, statuses = statuses, days_to_expiration = days_to_expiration)
 
 
 @app.route('/delete_stock_show_main_page', methods=['POST', 'GET'])
@@ -222,7 +239,7 @@ def delete_stock_show_main_page():
     update_stocks_and_options()
     add_updated_stock_list()
     add_updated_option_list()
-    return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses, name_of_options = name_of_options, strike_prices = strike_prices, current_prices_underlying = current_prices_underlying, type_of_options = type_of_options, statuses = statuses)
+    return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses, name_of_options = name_of_options, strike_prices = strike_prices, current_prices_underlying = current_prices_underlying, type_of_options = type_of_options, statuses = statuses, days_to_expiration = days_to_expiration)
 
 @app.route('/delete_option_show_main_page', methods = ['POST', 'GET'])
 def delete_option_show_main_page():
@@ -239,4 +256,4 @@ def delete_option_show_main_page():
     update_stocks_and_options()
     add_updated_stock_list()
     add_updated_option_list()
-    return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses, name_of_options = name_of_options, strike_prices = strike_prices, current_prices_underlying = current_prices_underlying, type_of_options = type_of_options, statuses = statuses)
+    return render_template('main_page.html', name_of_stocks = name_of_stocks, prices = prices, assets = assets, quantities = quantities, costs = costs, current_market_values = current_market_values, profit_or_losses = profit_or_losses, name_of_options = name_of_options, strike_prices = strike_prices, current_prices_underlying = current_prices_underlying, type_of_options = type_of_options, statuses = statuses, days_to_expiration = days_to_expiration)
